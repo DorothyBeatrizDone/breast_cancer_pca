@@ -91,3 +91,15 @@ plt.title('2D PCA of Breast Cancer Dataset')
 plt.legend()
 plt.grid(True)
 plt.show()
+
+# Get loadings for PC1 and PC2
+loadings = pd.DataFrame(pca.components_[:2].T,  # Transpose first two rows (PC1 and PC2)
+                        columns=['PC1', 'PC2'],
+                        index=features.columns)
+
+# Print top contributing features
+print("Top variables contributing to PC1:")
+print(loadings['PC1'].abs().sort_values(ascending=False).head(5))
+
+print("\nTop variables contributing to PC2:")
+print(loadings['PC2'].abs().sort_values(ascending=False).head(5))
