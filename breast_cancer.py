@@ -1,6 +1,14 @@
 import kaggle
 import pandas as pd
 import os
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+
+# Practice PCA principles as outlined in IBM's https://www.ibm.com/think/topics/principal-component-analysis
+# Dataset:  https://www.kaggle.com/datasets/uciml/breast-cancer-wisconsin-data 
 
 # C:\Users\carri\.kaggle\kaggle.json  
 # Authenticate using kaggle.json (make sure the path is set correctly beforehand)
@@ -12,43 +20,40 @@ print(kaggle.api.dataset_list_files('uciml/breast-cancer-wisconsin-data').files)
 # Download and unzip the dataset to current directory
 kaggle.api.dataset_download_files('uciml/breast-cancer-wisconsin-data', path='.', unzip=True)
 
-# Load and Prepare the Dataset
-training_df = pd.read_csv("StudentsPerformance.csv")  
+df = pd.read_csv('data.csv')
+df = df.drop(['id', 'Unnamed: 32'], axis=1)
+features = df.drop('diagnosis', axis=1) #? axis = 1???
+labels = df['diagnosis']
 
-print('Total number of rows: {0}\n\n'.format(len(training_df.index)))
-print(training_df.head(200))
-print(training_df.describe(include='all'))
+# Step 1: Standardize the range of continuous initial variables
+scaler = StandardScaler()
+# - Subtract the mean and divide by the standard deviation for each variable
+scaled_features = scaler.fit_transform(features)
 
-# What is the maximum reading score?
-max_reading_score = training_df['reading score'].max()
-print("What is the maximum math score? \t\t\t\tAnswer: {score:.2f}%".format(score = max_reading_score))
+# Step 2: Compute the covariance matrix to identify correlations
+# - Covariance matrix captures how variables vary together
+# - It is a d x d symmetric matrix, where d is the number of dimensions
+cov_matrix = np.cov(scaled_features.T)
 
-# What is the mean reading score?
-mean_reading_score = training_df['reading score'].mean()
-print("What is the mean math score? \t\tAnswer: {mean:.4f}%".format(mean = mean_reading_score))
+# Step 3: Compute the eigenvectors and eigenvalues of the covariance matrix
+# - Eigenvectors = principal components (directions of maximum variance)
+# - Eigenvalues = amount of variance in each component
+eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
 
-# How many ethnicities are in the dataset?
-num_race =  training_df['race/ethnicity'].nunique()
-print("How many ethnicities are in the dataset? \t\tAnswer: {number}".format(number = num_race))
+# Step 4: Select the principal components
+# - Rank eigenvectors by eigenvalue
+explained_variance_ratio = eigenvalues / eigenvalues.sum()
 
-# What is the most frequent parental level of education?
-most_freq_parental_education = training_df['parental level of education'].value_counts().idxmax()
-print("What is the most frequent parental level of education? \t\tAnswer: {type}".format(type = most_freq_parental_education))
+# - Use a scree plot to choose the number of components to retain
+plt.figure(figsize=(10, 6))
+plt.plot(np.cumsum(explained_variance_ratio), marker='o')
+plt.title('Scree Plot: Cumulative Explained Variance')
+plt.xlabel('Number of Principal Components')
+plt.ylabel('Cumulative Explained Variance')
+plt.grid(True)
+plt.show()
 
-# Are any features missing data?
-missing_values = training_df.isnull().sum().sum()
-print("Are any features missing data? \t\t\t\tAnswer:", "No" if missing_values == 0 else "Yes")
-
-# correlation matrix
-print(training_df.corr(numeric_only = True))
-
-#Dealing w/ categorical data
-#Three options: 
-# 1. one-hot encoding using its sparse representation to save memeory, 
-# 2. embedding (if there lots of categories), 
-# 3. hashing
-# Choose: embedding (only for practice). In reality, one-hot encoding may actually be more appropriate since we do not have many dimensions.
-
-
-
+# Step 5: Transform the data into the new coordinate system
+# - Project the standardized data onto the space defined by the selected principal components
+# - This results in a dataset with reduced dimensions but preserved information
 
