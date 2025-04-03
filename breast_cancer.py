@@ -1,3 +1,5 @@
+# Purpose: Predicting breast cancer. This script focuses on PCA to reduce the dimensionality of the features in the Kaggle dataset.
+
 import kaggle
 import pandas as pd
 import os
@@ -6,6 +8,7 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
+from kneed import KneeLocator
 
 # Practice PCA principles as outlined in IBM's https://www.ibm.com/think/topics/principal-component-analysis
 # Dataset:  https://www.kaggle.com/datasets/uciml/breast-cancer-wisconsin-data 
@@ -53,7 +56,38 @@ plt.ylabel('Cumulative Explained Variance')
 plt.grid(True)
 plt.show()
 
+# Num PCA comps: Find elbow in plot along the y-axis (eigenvalues or "total variance explained")
+# ANSWER: The "elbow" looks to be around the 10th principal component.
+
+# ALTERNATIVE: Find how many components explain at least 95% of the variance
+cumulative_variance = np.cumsum(explained_variance_ratio)
+n_components_95 = np.argmax(cumulative_variance >= 0.95) + 1
+print(f'Number of components to retain ≥95% variance: {n_components_95}') # And this gives us 10
+
+pca = PCA(n_components=10)
+
+
 # Step 5: Transform the data into the new coordinate system
 # - Project the standardized data onto the space defined by the selected principal components
 # - This results in a dataset with reduced dimensions but preserved information
 
+principal_components = pca.fit_transform(scaled_features)
+
+# Generate a PCA plot
+
+# Create a DataFrame with the PCA results
+pca_df = pd.DataFrame(data=principal_components[:, :2], columns=['PC1', 'PC2'])
+pca_df['Diagnosis'] = labels
+
+# Visualize PCA result
+plt.figure(figsize=(8, 6))
+for diagnosis in ['M', 'B']:
+    subset = pca_df[pca_df['Diagnosis'] == diagnosis]
+    plt.scatter(subset['PC1'], subset['PC2'], label=diagnosis, alpha=0.6)
+
+plt.xlabel('Principal Component 1')
+plt.ylabel('Principal Component 2')
+plt.title('2D PCA of Breast Cancer Dataset')
+plt.legend()
+plt.grid(True)
+plt.show()
